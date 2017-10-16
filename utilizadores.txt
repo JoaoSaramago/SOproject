@@ -1,2 +1,4 @@
 ghost;rider;1088888;Pedro Mota;a88888@iscte-iul.pt;IB1;25
 maria;itsme;1088889;Maria Mercedes;a88889@iscte-iul.pt;EI1;40
+nafrota;blabla;1077561;Joao Saramago;a77561@iscte-iul.pt;EIB1;300
+Silva;blah;1077981;Andre Silva;a77981@iscte-iul.pt;EIB2;503
