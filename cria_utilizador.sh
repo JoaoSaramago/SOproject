@@ -1,12 +1,16 @@
 #!/bin/bash
-
-clear
+if [ ! -e "etc/passwd.txt" ]; then
+echo "File etc/passwd.txt not found, it is not possible to run the script without this file."
+exit
+fi
+echo ""
+echo "### Create User ###"
+echo ""
 echo "Insert your student number:"
 read studentNo
-
-while [ -z $studentNo ]
+while [[ ! $studentNo =~ ^[-+]?[0-9]+$ || $(echo $studentNo | grep '\;' | wc -w) -gt 0 || -z "$studentNo" ]]
     do
-        echo "Your input can't be empty."
+        echo "Your input can't be empty or have a ';'."
         read studentNo
 done
 
@@ -14,6 +18,10 @@ x=$(cat etc/passwd.txt | grep [a]$studentNo[:] | wc -l)
 
 if [ $x -gt 0 ]; then
 	id=$(($studentNo + 1000000))
+    if [ ! -e "utilizadores.txt" ]; then
+        echo "File utilizadores.txt not found. Creating new one..."
+        touch utilizadores.txt
+    fi
 	x=$(cat utilizadores.txt | grep [\;]$id[\;] | wc -l)
 	if [ $x -gt 0 ]; then
 		echo “User already exists.”
@@ -41,5 +49,6 @@ if [ $x -gt 0 ]; then
         echo $nickname';'$password';'$id';'$name';'$email';'$class';'$balance >> utilizadores.txt
 	fi
 else
-	echo “Invalid student number.”
+	echo 'Invalid student number.'
 fi
+echo ""

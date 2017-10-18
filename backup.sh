@@ -1,4 +1,5 @@
 #!/bin/bash
+crontab cron.txt #Quando correr o backup.sh este script é automaticamente adicionado ao crontab em qualquer computador
 echo ""
 echo "### Create backup ###"
 echo ""

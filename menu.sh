@@ -1,14 +1,17 @@
 #!/bin/bash
+BOLD='tput bold'
+RED='tput setaf 1'
+RESET='tput sgr0'
 echo ""
-echo "### iCoolIUL Menu ###"
+echo "$($BOLD)$($RED)### iCoolIUL Menu ###$($RESET)"
 echo ""
-echo "1. Create user"
-echo "2. Change balance"
-echo "3. Create vehicle"
-echo "4. Show users"
-echo "5. Show stats"
-echo "6. Backup"
-echo "0. Exit"
+echo "$($BOLD)1.$($RESET) Create user"
+echo "$($BOLD)2.$($RESET) Change balance"
+echo "$($BOLD)3.$($RESET) Create vehicle"
+echo "$($BOLD)4.$($RESET) Show users"
+echo "$($BOLD)5.$($RESET) Show stats"
+echo "$($BOLD)6.$($RESET) Backup"
+echo "$($BOLD)0.$($RESET) Exit"
 echo ""
 echo "Choose one option:"
 read input

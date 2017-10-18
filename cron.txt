@@ -1,1 +1,1 @@
-* * * * * /Users/JGVSaramago/Desktop/SOproject/backup.sh
+0 0 * * * /Users/JGVSaramago/Desktop/SOproject/backup.sh
