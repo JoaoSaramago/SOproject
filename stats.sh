@@ -11,21 +11,21 @@ echo ""
 cat utilizadores.txt | awk -F ';' 'BEGIN{sum=0} {sum += $7} END {print "Accumulated users balance: ", sum}'
 echo ""
 echo "Top 5 users with more balance:"
-cat utilizadores.txt | awk -F ';' '{print "  ", $7, "- balance from user", $4}' | sort -r
+cat utilizadores.txt | awk -F ';' '{print "  ", $7, "- balance from user", $4}' | head -5 | sort -r
 echo ""
 echo "Number of drivers per degree course:"
 IGE=0
 ETI=0
 LEI=0
-while read p;
+while read linha;
     do
-        if [[ $p = *"EI"* ]];
+        if [[ $linha = *"EI"* ]];
         then
-            LEI=$(( LEI+=1 ))
-        else if [[ $p = *"ET"* ]];
+            LEI=$(( LEI + 1 ))
+        else if [[ $linha = *"ET"* ]];
         then
             ETI=$(( ETI+=1 ))
-        else if [[ $p = *"I"* ]];
+        else if [[ $linha = *"I"* ]];
         then
             IGE=$(( IGE+=1 ))
         fi fi fi
