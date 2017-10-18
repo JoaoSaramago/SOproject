@@ -9,7 +9,7 @@ fi
 echo "### Create new Vehicle script ###"
 echo "Insert the vehicle name:"
 read name
-while [[ $(cat viaturas.txt | grep $name[\;] | wc -l) -gt 0 || $(echo $name | grep '\;' | wc -w) -gt 0 ]]
+while [[ $(cat viaturas.txt | grep ^$name[\;] | wc -l) -gt 0 || $(echo $name | grep '\;' | wc -w) -gt 0 ]]
     do
     echo "Insert a valid vehicle name:"
     echo "Tip: You can't use ';' and the name can't be empty!"
