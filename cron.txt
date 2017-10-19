@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 * * * * * /home/a77981/SOproject/backup.sh
+=======
+0 0 * * * /Users/JGVSaramago/Desktop/SOproject/backup.sh
+>>>>>>> 61ef7763266b3c21ce6ca4e7e629a2d58fabf54c
