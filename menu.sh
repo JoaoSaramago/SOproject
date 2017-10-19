@@ -1,4 +1,5 @@
 #!/bin/bash
+crontab /home/a77981/SOproject/cron.txt #Sempre que alguém abre o menu, o ficheiro cron.txt é adicionado ao crontab
 BOLD='tput bold'
 RED='tput setaf 1'
 RESET='tput sgr0'
@@ -14,12 +15,12 @@ echo "$($BOLD)6.$($RESET) Backup"
 echo "$($BOLD)0.$($RESET) Exit"
 echo ""
 echo "Choose one option:"
+echo ""
 read input
 while [[ ! $input =~ [0-6] ]]; do
     echo "Invalid option"
     read input
 done
-echo ""
 case $input in
 1)
     ./cria_utilizador.sh
