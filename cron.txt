@@ -1,1 +1,1 @@
-* * * * * /Users/JGVSaramago/Desktop/SOproject/backup.sh
+* * * * * /home/a77981/SOproject/backup.sh
