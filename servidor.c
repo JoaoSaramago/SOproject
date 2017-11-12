@@ -34,8 +34,8 @@ int main(){
 
     printf("PID: %d\n", getpid() );
 
-    FILE *pidFile = fopen("servidor.pid", "w");
-    FILE *logFile = fopen("servidor.log", "a");
+    FILE *pidFile = fopen("../servidor.pid", "w");
+    FILE *logFile = fopen("../servidor.log", "a");
 
     if(pidFile == NULL){
         printf("Error opening file!\n");
