@@ -45,10 +45,11 @@ int main(){
 
     fprintf(pidFile,"PID: %d\n", getpid() );
     fprintf(logFile, "PID: %d\n", getpid() );
-    pid = fork();
 
     fclose(pidFile);
     fclose(logFile);
+
+    pid = fork();
 
     if(pid==0){ //Child (Fiscal)
         signal(SIGINT, closeHandlerChild);
