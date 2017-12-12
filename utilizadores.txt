@@ -5,4 +5,3 @@ Silva;blah;1077981;Andre Silva;a77981@iscte-iul.pt;EI2;503
 ritinha;issoagora;1077778;Rita Costa;a77778@iscte-iul.pt;EI1;33
 derick;piedadeeeee;1078894;Derick Piedade;a78894@iscte-iul.pt;ETI1;57
 fifi;fufa;1078328;Filipe Ferreira;a78328@iscte-iul.pt;IB2;123
-henry;thebest;1064544;Filipe Henriques;a64544@iscte-iul.pt;ETI2;345
