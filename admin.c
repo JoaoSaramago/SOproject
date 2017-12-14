@@ -1,42 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <inttypes.h>
-#include <math.h>
-#include <time.h>
-#include <sys/types.h>
-#include <sys/sem.h>
-
-#define RESET   "\033[0m"
-#define BOLDBLACK   "\033[1m\033[30m"      /* Bold Black */
-#define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
-
-struct sembuf DOWN = { 0, -1, 0};
-struct sembuf UP = { 0, 1, 0};
-
-typedef struct {
-    char nick[50];
-    char pass[50];
-    int id;
-    char nome[50];
-    char email[40];
-    char turma[10];
-    int saldo;
-} Tcliente;
-
-typedef struct {
-    char ID[20];
-    char cor[20];
-    char marca[50];
-    char modelo[30];
-    char tipo[20];
-    int mudancas;
-    char matricula[15];
-    int available;
-    long timeStarted;
-} Tviatura;
+#include "defines.h"
 
 int sizeCliente = 0;
 Tcliente* arrCliente;
@@ -101,7 +63,7 @@ void lerDadosParaMemoriaViatura() {
             strcpy(viatura.tipo, strtok (NULL,";"));
             viatura.mudancas = (int) strtol(strtok(NULL, ";"), &end, 10);
             strcpy(viatura.matricula, strtok (NULL,";"));
-            viatura.available = 1;
+            viatura.status = AVAILABLE;
             viatura.timeStarted = -1;
             arrViatura[sizeViatura] = viatura;
             sizeViatura++;
@@ -117,7 +79,7 @@ void lerDadosParaMemoriaViatura() {
     fclose(file);
 }
 
-void lerDadosParaMemoria() {
+void lerDadosParaMemoria() {    //TODO reset antes de ler
     lerDadosParaMemoriaCliente();
     printf("\n");
     lerDadosParaMemoriaViatura();
@@ -144,13 +106,12 @@ void imprimirMemoria() {
 }
 
 void alterarUtilizador() {
+    
     char s[50];
-    char pass[20];
-    char saldo[20], *end;
     printf(BOLDBLACK"\nIntroduza o nickname do utilizador a alterar: "RESET);
     fgets( s, 50, stdin);
     s[ strlen(s)-1 ] = 0;
-    for(int i = 0; i < sizeCliente-1; ++i) {
+    for(int i = 0; i < sizeCliente; ++i) {
         if (strcmp(arrCliente[i].nick,s)==0) {
             printf("Utilizador encontrado.\n");
             char j[20];
@@ -161,9 +122,13 @@ void alterarUtilizador() {
                 if (strcmp(j, "n") == 0)
                     break;
                 else if (strcmp(j, "s") == 0) {
+                    char pass[20];
                     printf(BOLDBLACK"Digite a nova password: "RESET);
                     fgets(pass, 20, stdin);
                     pass[strlen(pass) - 1] = 0;
+                    semop(77981, &DOWN, 1);
+                    strcpy(arrCliente[i].pass, pass);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
@@ -174,16 +139,16 @@ void alterarUtilizador() {
                 if (strcmp(j, "n")==0)
                     break;
                 else if (strcmp(j, "s") == 0) {
+                    char saldo[20], *end;
                     printf(BOLDBLACK"Digite o novo saldo: "RESET);
                     fgets(saldo, 20, stdin);
                     saldo[ strlen(saldo)-1 ] = 0;
+                    semop(77981, &DOWN, 1);
+                    arrCliente[i].saldo = (int) strtol(saldo, &end, 10);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
-            semop(77981, &DOWN, 1);
-            strcpy(arrCliente[i].pass, pass);
-            arrCliente[i].saldo = (int) strtol(saldo, &end, 10);
-            semop(77981, &UP, 1);
             printf("Alterações guardadas na memória com sucesso.\n");
             return;
         }
@@ -192,11 +157,15 @@ void alterarUtilizador() {
 }
 
 void alterarViatura() {
+    
+    struct sembuf DOWN = { 1, -1, 0};
+    struct sembuf UP = { 1, 1, 0};
+    
     char s[50];
     printf(BOLDBLACK"\nIntroduza o ID da viatura a alterar: "RESET);
     fgets( s, 50, stdin);
     s[ strlen(s)-1 ] = 0;
-    for(int i = 0; i < sizeViatura-1; ++i) {
+    for(int i = 0; i < sizeViatura; ++i) {
         if (strcmp(arrViatura[i].ID,s)==0) {
             printf("Viatura encontrada.\n");
             char j[20];
@@ -211,7 +180,9 @@ void alterarViatura() {
                     printf(BOLDBLACK"Digite a nova cor: "RESET);
                     fgets(cor, 20, stdin);
                     cor[strlen(cor) - 1] = 0;
+                    semop(77981, &DOWN, 1);
                     strcpy(arrViatura[i].cor, cor);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
@@ -226,7 +197,9 @@ void alterarViatura() {
                     printf(BOLDBLACK"Digite a nova marca: "RESET);
                     fgets(marca, 30, stdin);
                     marca[strlen(marca) - 1] = 0;
+                    semop(77981, &DOWN, 1);
                     strcpy(arrViatura[i].marca, marca);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
@@ -241,7 +214,9 @@ void alterarViatura() {
                     printf(BOLDBLACK"Digite o novo modelo: "RESET);
                     fgets(modelo, 30, stdin);
                     modelo[strlen(modelo) - 1] = 0;
+                    semop(77981, &DOWN, 1);
                     strcpy(arrViatura[i].modelo, modelo);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
@@ -256,7 +231,9 @@ void alterarViatura() {
                     printf(BOLDBLACK"Digite o novo tipo: "RESET);
                     fgets(tipo, 30, stdin);
                     tipo[strlen(tipo) - 1] = 0;
+                    semop(77981, &DOWN, 1);
                     strcpy(arrViatura[i].tipo, tipo);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
@@ -271,7 +248,9 @@ void alterarViatura() {
                     printf(BOLDBLACK"Digite o novo nº de mudanças: "RESET);
                     fgets(mudancas, 20, stdin);
                     mudancas[ strlen(mudancas)-1 ] = 0;
+                    semop(77981, &DOWN, 1);
                     arrViatura[i].mudancas = (int) strtol(mudancas, &end, 10);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
@@ -286,7 +265,9 @@ void alterarViatura() {
                     printf(BOLDBLACK"Digite a nova matricula: "RESET);
                     fgets(matricula, 30, stdin);
                     matricula[strlen(matricula) - 1] = 0;
+                    semop(77981, &DOWN, 1);
                     strcpy(arrViatura[i].matricula, matricula);
+                    semop(77981, &UP, 1);
                     break;
                 }
             }
@@ -341,7 +322,7 @@ void guardarDados() {
 
 void viaturasDisponiveis() {
     for (int i=0; i<sizeViatura; i++) {
-        if (arrViatura[i].available) {
+        if (arrViatura[i].status == AVAILABLE) {
             printf("%s\n", arrViatura[i].marca);
             //TODO calcular tempo alugado
         }
@@ -350,22 +331,10 @@ void viaturasDisponiveis() {
 
 void viaturasNaoDisponiveis() {
     for (int i=0; i<sizeViatura; i++) {
-        if (!arrViatura[i].available) {
+        if (!(arrViatura[i].status == AVAILABLE)) {
             printf("%s\n", arrViatura[i].marca);
-            //TODO calcular tempo alugado
         }
     }
-}
-
-long getTimeSecs() {
-    long            s;  // Seconds
-    struct timespec spec;
-    
-    clock_gettime(CLOCK_MONOTONIC, &spec);
-    
-    s  = spec.tv_sec;
-    
-    return s;
 }
 
 int main() {
@@ -373,6 +342,9 @@ int main() {
     
     int idV = shmget( 77981, sizeof(Tviatura)*200, IPC_CREAT | 0666 );
     arrViatura = (Tviatura *)shmat(idV, 0, 0);
+    for (int i=0; i<200; i++) {
+        strcpy( arrViatura[i].ID, "");
+    } //TODO nao apagar sempre tudo se ja existir
     
     int idC = shmget( 77561, sizeof(Tcliente)*200, IPC_CREAT | 0666 );
     arrCliente = (Tcliente *)shmat(idC, 0, 0);
