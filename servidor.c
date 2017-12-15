@@ -249,7 +249,6 @@ int main(){ //TODO registar nos logs
 		signal(SIGINT, closeHandlerChild);
 		signal(SIGALRM, alarmHandlerChild);
 		alarm(60);
-        //SEMDOWN
         while(1){
             for(int i = 0; i<200; i++){ //TODO verificar tamanho
 				semop(77981, &VDOWN, 1);
