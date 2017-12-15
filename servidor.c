@@ -78,7 +78,6 @@ void vehicleToString(char* string, int i){
 }
 
 void listVehicles(int clientID){
-    printf("oi\n");
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
     int i = 0;
@@ -159,24 +158,51 @@ void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reser
             tempMessage.type = clientID;
             tempMessage.data.status = FAIL;
             for(int j = 0; j<200; j++) { // TODO verificar tamanho
+			semop(77981, &VDOWN, 1);
                 if((arrViatura[i].status == RESERVED || arrViatura[i].status == RENTED) && arrViatura[i].clientID == clientID)  {
-                    semop(77981, &VDOWN, 1);
 					arrViatura[i].timeStarted = -1;
                     arrViatura[i].status = AVAILABLE;
 					semop(77981, &VUP, 1);
                     tempMessage.data.status = SUCCESS;
                     break;
-                }
+                } else {
+					semop(77981, &VUP, 1);
+				}
             }
             msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
             break;
         }
     }
-    //Trancar rodas?
 }
 
 void saldo(int clientID){   //Saldo actual ou antes de um aluguer?
-    
+    for(int i = 0; i<200; i++){	//TODO calcular tamanho array
+		MsgServerClient tempMessage;
+        tempMessage.type = clientID;
+        tempMessage.data.status = FAIL;
+		semop(77981, &CDOWN, 1);
+		if(arrCliente[i].id == clientID) {
+			for(int j = 0; j<200; j++){	//TODO calcular size array - Percorre viaturas
+				semop(77981, &VDOWN, 1);
+				if(arrViatura[j].clientID == clientID){
+					long timeElapsed = getTimeSecs() - arrViatura[j].timeStarted);
+					int timeElapsedSecs = ((int)timeElapsed) / 60;
+					int saldoCliente = ((int)arrCliente[i]-timeElapsedSecs);
+					printToScreen("Saldo cliente = %d", saldoCliente);
+					tempMessage.data.status = SUCCESS;
+					tempMessage.data.value1 = saldoCliente;
+				}
+				semop(77981, &VUP, 1);
+			}
+			semop(77981, &CUP, 1);
+			msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
+			return;
+		} else {
+			semop(77981, &CUP, 1);
+		}
+		
+	}
+	printToScreen("User not found!");
 }
 
 void carregarSaldo(int clientID, char* moneyToAddChar){
