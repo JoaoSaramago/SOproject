@@ -21,6 +21,7 @@ void balanceHandler(int signal){
 }
 
 void listVehicles(){
+    printf("Showing available vehicles...\n");
     MsgClientServer sendMsg;
     sendMsg.type = 1;
     sendMsg.data.msgType = VIATURAS;
@@ -43,11 +44,59 @@ void listVehicles(){
     } while (!(receivedMsg.data.status == ENDLIST));
 }
 
+void reserve() {
+    char vehicle[20];
+    printf(BOLDBLACK"Vehicle ID to reserve: "RESET);
+    fgets( vehicle, 20, stdin);
+    vehicle[ strlen(vehicle)-1 ] = 0;
+    MsgClientServer sendMsg;
+    sendMsg.type = 1;
+    sendMsg.data.msgType = RESERVAR;
+    strcpy(sendMsg.data.info1, vehicle);
+    sendMsg.data.myid = thisid;
+    msgsnd(idM, &sendMsg, sizeof(sendMsg.data), 0);
+    
+    MsgServerClient receivedMsg;
+    msgrcv(idM, &receivedMsg, sizeof(receivedMsg.data), thisid, 0);
+    if (receivedMsg.data.status == SUCCESS)
+        printf("Vehicle reserved successefully.");
+    else
+        printf("It was not possible to reserve the vehicle.");
+}
+
 void rent() {
     char vehicle[20];
-    printf(BOLDBLACK"Nickname: "RESET);
+    printf(BOLDBLACK"Vehicle ID to rent: "RESET);
     fgets( vehicle, 20, stdin);
-    vehicle[ strlen(nick)-1 ] = 0;
+    vehicle[ strlen(vehicle)-1 ] = 0;
+    MsgClientServer sendMsg;
+    sendMsg.type = 1;
+    sendMsg.data.msgType = ALUGAR;
+    strcpy(sendMsg.data.info1, vehicle);
+    sendMsg.data.myid = thisid;
+    msgsnd(idM, &sendMsg, sizeof(sendMsg.data), 0);
+    
+    MsgServerClient receivedMsg;
+    msgrcv(idM, &receivedMsg, sizeof(receivedMsg.data), thisid, 0);
+    if (receivedMsg.data.status == SUCCESS)
+        printf("Vehicle rented successefully.");
+    else
+        printf("It was not possible to rent the vehicle.");
+}
+
+void finalize() {
+    MsgClientServer sendMsg;
+    sendMsg.type = 1;
+    sendMsg.data.msgType = FINALIZAR;
+    sendMsg.data.myid = thisid;
+    msgsnd(idM, &sendMsg, sizeof(sendMsg.data), 0);
+    
+    MsgServerClient receivedMsg;
+    msgrcv(idM, &receivedMsg, sizeof(receivedMsg.data), thisid, 0);
+    if (receivedMsg.data.status == SUCCESS)
+        printf("Renting or reserve finalized.");
+    else
+        printf("Nothing to finalize.");
 }
 
 int main(){
@@ -103,20 +152,19 @@ int main(){
         switch (menuOption) {
                 
             case 1 :
-                printf("listVehicles\n");
                 listVehicles();
                 break;
                 
             case 2 :
-                rent();
+                reserve();
                 break;
                 
             case 3 :
-                
+                rent();
                 break;
                 
             case 4 :
-                
+                finalize();
                 break;
                 
             case 5 :

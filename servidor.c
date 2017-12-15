@@ -44,9 +44,9 @@ void login(char* nickname, char* password, int clientPid){
     tempMessage.data.status = FAIL;
     for(int i = 0; i < 200; i++) { // TODO verificar tamanho
         if (strcmp(arrCliente[i].nick, nickname) == 0) {
-            printToScreen("User found.\n");
+            printToScreen("User found.");
             if(strcmp(arrCliente[i].pass, password) == 0){
-                printToScreen("User connected.\n");
+                printToScreen("User connected.");
 				semop(77981, &CDOWN, 1);
                 arrCliente[i].pid = clientPid;
                 tempMessage.data.value1 = arrCliente[i].id;
@@ -78,15 +78,12 @@ void vehicleToString(char* string, int i){
 }
 
 void listVehicles(int clientID){
-    printf("oi\n");
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
     int i = 0;
     while (arrViatura[i].mudancas != -1) {
-        printf("vehicle\n");
         if (arrViatura[i].status == AVAILABLE) {
             vehicleToString(tempMessage.data.text, i);
-            printf("%s", tempMessage.data.text);
             tempMessage.data.status = SENDING;
             msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
         }
@@ -96,81 +93,101 @@ void listVehicles(int clientID){
     msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);    //Fim da lista
 }
 
-void reservar(int clientID, char* vehicleID){
-    for (int i = 0; i<200; i++) { //TODO verificar tamanho
+void reservar(int clientID, char* vehicleID){ // o cliente consegue reservar mais de uma vez
+    printf("<- Reserve vehicle\n");
+    int i = 0;
+    while (arrCliente[i].id != -1) { //percorrer clientes
         if(arrCliente[i].id == clientID) {
             MsgServerClient tempMessage;
             tempMessage.type = clientID;
-            if(arrCliente[i].saldo > 0){
-                for(int j = 0; j<200; j++) { // TODO verificar tamanho
-                    if(strcmp(arrViatura[i].ID, vehicleID) == 0 && arrViatura[i].status == AVAILABLE) {
+            if(arrCliente[i].saldo > 0 && !arrCliente[i].hasVehicle){
+                int j = 0;
+                while (arrViatura[j].mudancas != -1) { //percorrer viaturas
+                    if(strcmp(arrViatura[j].ID, vehicleID) == 0 && arrViatura[j].status == AVAILABLE) {
 						semop(77981, &VDOWN, 1);
                         arrViatura[j].status = RESERVED;
                         arrViatura[j].clientID = clientID;
                         arrViatura[j].timeStarted = getTimeSecs();
                         arrViatura[j].clientIndex = i;
 						semop(77981, &VUP, 1);
+                        arrCliente[i].hasVehicle = 1;
                         tempMessage.data.status = SUCCESS;
-                        msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
-                        break;
+                        msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
+                        return;
                     }
+                    j++;
                 }
-            } else {
-                tempMessage.data.status = FAIL;
-                msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
+                printToScreen("Vehicle not found");
             }
+            tempMessage.data.status = FAIL;
+            msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
 			return;
         }
+        i++;
     }
     printToScreen("Client not found");
 }
 
 void alugar(int clientID, char* vehicleID){
-    for (int i = 0; i<200; i++) { //TODO verificar tamanho
+    printf("<- Rent vehicle\n");
+    int i = 0;
+    while (arrCliente[i].id != -1) { //percorrer clientes
         if(arrCliente[i].id == clientID) {
             MsgServerClient tempMessage;
             tempMessage.type = clientID;
             if(arrCliente[i].saldo > 0){
-                for(int j = 0; j<200; j++) { // TODO verificar tamanho
-                    if(strcmp(arrViatura[i].ID, vehicleID) == 0 && (arrViatura[i].status == AVAILABLE || (arrViatura[i].status == RESERVED && arrViatura[i].clientID == clientID))) {    //Explicar no relatório!!!
+                int j = 0;
+                while (arrViatura[j].mudancas != -1) { //percorrer viaturas
+                    if(strcmp(arrViatura[j].ID, vehicleID) == 0 && ((arrViatura[j].status == AVAILABLE && !arrCliente[i].hasVehicle) || (arrViatura[j].status == RESERVED && arrViatura[j].clientID == clientID))) { //Explicar relatorio
                         semop(77981, &VDOWN, 1);
-						arrViatura[i].timeStarted = getTimeSecs();
-						semop(77981, &VUP, 1);
+                        arrViatura[j].status = RENTED;
+                        arrViatura[j].clientID = clientID;
+                        arrViatura[j].timeStarted = getTimeSecs();
+                        arrViatura[j].clientIndex = i;
+                        semop(77981, &VUP, 1);
+                        arrCliente[i].hasVehicle = 1;
                         tempMessage.data.status = SUCCESS;
-                        msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
-                        //Destranca rodas da viatura?
-                        break;
+                        msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
+                        return;
                     }
+                    j++;
                 }
-            } else {
-                tempMessage.data.status = FAIL;
-                msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
+                printToScreen("Vehicle not found");
             }
-            break;
+            tempMessage.data.status = FAIL;
+            msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
+            return;
         }
+        i++;
     }
-    printf("Client not found");
+    printToScreen("Client not found");
 }
 
 void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reservas???
-    for(int i = 0; i<200; i++){
+    printf("<- Finalize renting or reserve.\n");
+    int i = 0;
+    while (arrCliente[i].id != -1) { //percorrer clientes
         if(arrCliente[i].id == clientID) {
             MsgServerClient tempMessage;
             tempMessage.type = clientID;
             tempMessage.data.status = FAIL;
-            for(int j = 0; j<200; j++) { // TODO verificar tamanho
-                if((arrViatura[i].status == RESERVED || arrViatura[i].status == RENTED) && arrViatura[i].clientID == clientID)  {
+            int j = 0;
+            while (arrViatura[j].mudancas != -1) { //percorrer viaturas
+                if((arrViatura[j].status == RESERVED || arrViatura[j].status == RENTED) && arrViatura[j].clientID == clientID)  {
                     semop(77981, &VDOWN, 1);
-					arrViatura[i].timeStarted = -1;
-                    arrViatura[i].status = AVAILABLE;
+					arrViatura[j].timeStarted = -1;
+                    arrViatura[j].status = AVAILABLE;
 					semop(77981, &VUP, 1);
                     tempMessage.data.status = SUCCESS;
+                    arrCliente[i].hasVehicle = 0;
                     break;
                 }
+                j++;
             }
-            msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
-            break;
+            msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
+            return;
         }
+        i++;
     }
     //Trancar rodas?
 }
@@ -258,16 +275,16 @@ int main(){ //TODO registar nos logs
 		alarm(60);
         while(1){
             for(int i = 0; i<200; i++){ //TODO verificar tamanho
-				//semop(77981, &VDOWN, 1);
+				semop(77981, &VDOWN, 1);
                 if(arrViatura[i].status == RESERVED && ((arrViatura[i].timeStarted - getTimeSecs())/60 >= 5)){
 					arrViatura[i].status = AVAILABLE;
                     arrViatura[i].timeStarted = -1;
-					//semop(77981, &CDOWN, 1);
+					semop(77981, &CDOWN, 1);
                     if(arrCliente[arrViatura[i].clientIndex].online) {		//Check to see if the client is online before sending a signal. The client shouldn't ever be offline when he has a reservation, but it's nice to check anyway
                         kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR1);
 					}
-					//semop(77981, &CUP, 1);
-					//semop(77981, &VUP, 1);
+					semop(77981, &CUP, 1);
+					semop(77981, &VUP, 1);
                 }
             }
             sleep(1);
@@ -288,7 +305,7 @@ int main(){ //TODO registar nos logs
                     break;
                     
                 case VIATURAS:
-                    printf("listvehicles\n");
+                    printf("<- Available Vehicles\n");
                     listVehicles(tempMessage.data.myid);
                     break;
                     

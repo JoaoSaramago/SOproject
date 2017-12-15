@@ -28,6 +28,7 @@ void lerDadosParaMemoriaCliente(){
             strcpy(cliente.email, strtok (NULL,";"));
             strcpy(cliente.turma, strtok (NULL,";"));
             cliente.saldo = (int) strtol(strtok(NULL, ";"), &end, 10);
+            cliente.hasVehicle = 0;
             arrCliente[sizeCliente] = cliente;
             sizeCliente++;
             printf(".");
@@ -348,6 +349,9 @@ int main() {
     
     int idC = shmget( 77561, sizeof(Tcliente)*200, IPC_CREAT | 0666 );
     arrCliente = (Tcliente *)shmat(idC, 0, 0);
+    for (int i=0; i<200; i++) {
+        arrCliente[i].id = -1;
+    } //TODO nao apagar sempre tudo se ja existir
     
     printf("time: %ld seconds\n", getTimeSecs());
     

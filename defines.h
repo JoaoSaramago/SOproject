@@ -58,6 +58,7 @@ typedef struct {
     int saldo;
     int online; //-1 Offline, ClientPID ou ClientID se online
     int pid;
+    int hasVehicle;
 } Tcliente;
 
 typedef struct {
