@@ -298,6 +298,7 @@ int main(){ //TODO registar nos logs
 					semop(77981, &CDOWN, 1);
                     if(arrCliente[arrViatura[i].clientIndex].online) {		//Check to see if the client is online before sending a signal. The client shouldn't ever be offline when he has a reservation, but it's nice to check anyway
                         kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR1);
+						printToScreen("Cliente %d ultrapassou os 5 minutos!", arrCliente[arrViatura[i].clientIndex);
 					}
 					semop(77981, &CUP, 1);
 					semop(77981, &VUP, 1);
@@ -306,7 +307,9 @@ int main(){ //TODO registar nos logs
 				semop(77981, &VDOWN, 1);
 				semop(77981, &CDOWN, 1);
 				if(arrCliente[arrViatura[i].clientIndex].saldo - 1 < 0){
-					kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR2);
+					printToScreen("Cliente %d excedeu o seu saldo.", arrCliente[arrViatura[i].clientIndex].online);
+					if(arrCliente[arrViatura[i].clientIndex].online != -1)
+						kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR2);
 				} else {
 					arrCliente[arrViatura[i].clientIndex].saldo--;
 				}
