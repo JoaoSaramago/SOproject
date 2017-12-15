@@ -78,6 +78,7 @@ void vehicleToString(char* string, int i){
 }
 
 void listVehicles(int clientID){
+	printToScreen("Sending vehicle list to client %d.\n", clientID);
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
     int i = 0;
@@ -94,7 +95,7 @@ void listVehicles(int clientID){
 }
 
 void reservar(int clientID, char* vehicleID){ // o cliente consegue reservar mais de uma vez
-    printf("<- Reserve vehicle\n");
+    printToScreen("Reservar - Cliente %d a reservar um veiculo.", clientID);
     int i = 0;
     while (arrCliente[i].id != -1) { //percorrer clientes
         if(arrCliente[i].id == clientID) {
@@ -125,11 +126,10 @@ void reservar(int clientID, char* vehicleID){ // o cliente consegue reservar mai
         }
         i++;
     }
-    printToScreen("Client not found");
 }
 
 void alugar(int clientID, char* vehicleID){
-    printf("<- Rent vehicle\n");
+    printToScreen("Client %d a tentar alugar um veiculo.", clientID);
     int i = 0;
     while (arrCliente[i].id != -1) { //percorrer clientes
         if(arrCliente[i].id == clientID) {
@@ -160,11 +160,11 @@ void alugar(int clientID, char* vehicleID){
         }
         i++;
     }
-    printToScreen("Client not found");
+    printToScreen("Alugar - Client %d not found", clientID);
 }
 
 void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reservas???
-    printf("<- Finalize renting or reserve.\n");
+    printToScreen("Cliente %d a tentar finalizar um aluguer", clientID);
     int i = 0;
     while (arrCliente[i].id != -1) { //percorrer clientes
         if(arrCliente[i].id == clientID) {
@@ -173,15 +173,16 @@ void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reser
             tempMessage.data.status = FAIL;
             int j = 0;
             while (arrViatura[j].mudancas != -1) { //percorrer viaturas
+                semop(77981, &VDOWN, 1);
                 if((arrViatura[j].status == RESERVED || arrViatura[j].status == RENTED) && arrViatura[j].clientID == clientID)  {
-                    semop(77981, &VDOWN, 1);
 					arrViatura[j].timeStarted = -1;
                     arrViatura[j].status = AVAILABLE;
 					semop(77981, &VUP, 1);
                     tempMessage.data.status = SUCCESS;
                     arrCliente[i].hasVehicle = 0;
                     break;
-                }
+                } else {
+                    semop(77981, &VUP, 1);
                 j++;
             }
             msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
@@ -189,14 +190,41 @@ void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reser
         }
         i++;
     }
-    //Trancar rodas?
+	printToScreen("Finalizar - Client %d not found", clientID);
 }
 
-void saldo(int clientID){   //Saldo actual ou antes de um aluguer?
-    
+void saldo(int clientID){
+	printToScreen("Saldo - Cliente %d a pedir o seu saldo.", clientID);
+	MsgServerClient tempMessage;
+	tempMessage.type = clientID;
+    tempMessage.data.status = FAIL;
+    for(int i = 0; i<200; i++){	//TODO calcular tamanho array
+		semop(77981, &CDOWN, 1);
+		if(arrCliente[i].id == clientID) {
+			for(int j = 0; j<200; j++){	//TODO calcular size array - Percorre viaturas
+				semop(77981, &VDOWN, 1);
+				if(arrViatura[j].clientID == clientID){
+					long timeElapsed = getTimeSecs() - arrViatura[j].timeStarted);
+					int timeElapsedSecs = ((int)timeElapsed) / 60;
+					int saldoCliente = ((int)arrCliente[i]-timeElapsedSecs);
+					printToScreen("Saldo cliente = %d", saldoCliente);
+					tempMessage.data.status = SUCCESS;
+				}
+				semop(77981, &VUP, 1);
+			}
+			semop(77981, &CUP, 1);
+			msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
+			return;
+		} else {
+			semop(77981, &CUP, 1);
+		}
+		
+	}
+	printToScreen("Saldo - User not found!");
 }
 
 void carregarSaldo(int clientID, char* moneyToAddChar){
+	printToScreen("Carregar - Cliente %d a tentar carregar saldo.", clientID);
     int moneyToAdd = atoi(moneyToAddChar);
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
@@ -256,13 +284,12 @@ int main(){ //TODO registar nos logs
 	FILE *logFile = fopen("servidor.log", "a");
 
 	if(pidFile == NULL){
-		printf("Error opening file!\n");
-		fprintf(logFile, "Error opening file!\n");
+		printToScreen("PID File - Error opening file!\n");
 		exit(1);
 	}
 	
 	fprintf(pidFile,"PID: %d\n", getpid() );
-	fprintf(logFile, "PID: %d\n", getpid() );
+	printToScreen("PID: %d\n", getpid() );
 	
 	fclose(pidFile);
     fclose(logFile);
@@ -282,10 +309,23 @@ int main(){ //TODO registar nos logs
 					semop(77981, &CDOWN, 1);
                     if(arrCliente[arrViatura[i].clientIndex].online) {		//Check to see if the client is online before sending a signal. The client shouldn't ever be offline when he has a reservation, but it's nice to check anyway
                         kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR1);
+						printToScreen("Cliente %d ultrapassou os 5 minutos!", arrCliente[arrViatura[i].clientIndex);
 					}
 					semop(77981, &CUP, 1);
 					semop(77981, &VUP, 1);
                 }
+				
+				semop(77981, &VDOWN, 1);
+				semop(77981, &CDOWN, 1);
+				if(arrCliente[arrViatura[i].clientIndex].saldo - 1 < 0){
+					printToScreen("Cliente %d excedeu o seu saldo.", arrCliente[arrViatura[i].clientIndex].online);
+					if(arrCliente[arrViatura[i].clientIndex].online != -1)
+						kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR2);
+				} else {
+					arrCliente[arrViatura[i].clientIndex].saldo--;
+				}
+				semop(77981, &CUP, 1);
+				semop(77981, &VUP, 1);
             }
             sleep(1);
         }
