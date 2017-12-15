@@ -158,7 +158,6 @@ void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reser
                     arrViatura[i].status = AVAILABLE;
 					semop(77981, &VUP, 1);
                     tempMessage.data.status = SUCCESS;
-                    //Destranca rodas da viatura?
                     break;
                 }
             }
