@@ -47,9 +47,11 @@ void login(char* nickname, char* password, int clientPid){
             printf("User found.\n");
             if(strcmp(arrCliente[i].pass, password) == 0){
                 printf("User connected.\n");
+				semop(77981, &CDOWN, 1);
                 arrCliente[i].pid = clientPid;
                 tempMessage.data.value1 = arrCliente[i].id;
                 arrCliente[i].online = clientPid; //Client online
+				semop(77981, &CUP, 1);
                 tempMessage.data.status = SUCCESS;
             }
         }
@@ -95,10 +97,12 @@ void reservar(int clientID, char* vehicleID){
             if(arrCliente[i].saldo > 0){
                 for(int j = 0; j<200; j++) { // TODO verificar tamanho
                     if(strcmp(arrViatura[i].ID, vehicleID) == 0 && arrViatura[i].status == AVAILABLE) {
+						semop(77981, &VDOWN, 1);
                         arrViatura[j].status = RESERVED;
                         arrViatura[j].clientID = clientID;
                         arrViatura[j].timeStarted = getTimeSecs();
                         arrViatura[j].clientIndex = i;
+						semop(77981, &VUP, 1);
                         tempMessage.data.status = SUCCESS;
                         msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
                         break;
@@ -122,7 +126,9 @@ void alugar(int clientID, char* vehicleID){
             if(arrCliente[i].saldo > 0){
                 for(int j = 0; j<200; j++) { // TODO verificar tamanho
                     if(strcmp(arrViatura[i].ID, vehicleID) == 0 && (arrViatura[i].status == AVAILABLE || (arrViatura[i].status == RESERVED && arrViatura[i].clientID == clientID))) {    //Explicar no relatório!!!
-                        arrViatura[i].timeStarted = getTimeSecs();
+                        semop(77981, &VDOWN, 1);
+						arrViatura[i].timeStarted = getTimeSecs();
+						semop(77981, &VUP, 1);
                         tempMessage.data.status = SUCCESS;
                         msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
                         //Destranca rodas da viatura?
@@ -147,8 +153,10 @@ void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reser
             tempMessage.data.status = FAIL;
             for(int j = 0; j<200; j++) { // TODO verificar tamanho
                 if((arrViatura[i].status == RESERVED || arrViatura[i].status == RENTED) && arrViatura[i].clientID == clientID)  {
-                    arrViatura[i].timeStarted = -1;
+                    semop(77981, &VDOWN, 1);
+					arrViatura[i].timeStarted = -1;
                     arrViatura[i].status = AVAILABLE;
+					semop(77981, &VUP, 1);
                     tempMessage.data.status = SUCCESS;
                     //Destranca rodas da viatura?
                     break;
@@ -172,11 +180,11 @@ void carregarSaldo(int clientID, char* moneyToAddChar){
     tempMessage.data.status = FAIL;
     for(int i = 0; i<200; i++){
         if(arrCliente[i].id == clientID) {
-            semop(77981, &DOWN, 1);
+            semop(77981, &CDOWN, 1);
             tempMessage.data.value1 = arrCliente[i].saldo;
             arrCliente[i].saldo += moneyToAdd;
             tempMessage.data.value2 = arrCliente[i].saldo;
-            semop(77981, &DOWN, 1);
+            semop(77981, &CUP, 1);
             tempMessage.data.status = SUCCESS;
             break;
         }
@@ -189,9 +197,9 @@ void logout(int clientID){
     tempMessage.data.status = FAIL;
     for(int i = 0; i<200; i++){
         if(arrCliente[i].id == clientID) {
-            //Sem down
+            sempop(77981, &CDOWN, 1);
             arrCliente[i].online = -1;
-            //Sem up
+			sempop(77981, &CUP, 1); 
             tempMessage.data.status = SUCCESS;
             break;
         }
@@ -245,11 +253,16 @@ int main(){ //TODO registar nos logs
         //SEMDOWN
         while(1){
             for(int i = 0; i<200; i++){ //TODO verificar tamanho
+				semop(77981, &VDOWN, 1);
                 if(arrViatura[i].status == RESERVED && ((arrViatura[i].timeStarted - getTimeSecs())/60 >= 5)){
-                    arrViatura[i].status = AVAILABLE;
+					arrViatura[i].status = AVAILABLE;
                     arrViatura[i].timeStarted = -1;
-                    if(arrCliente[arrViatura[i].clientIndex].online)
+					semop(77981, &CDOWN, 1);
+                    if(arrCliente[arrViatura[i].clientIndex].online) {		//Check to see if the client is online before sending a signal. The client shouldn't ever be offline when he has a reservation, but it's nice to check anyway
                         kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR1);
+					}
+					semop(77981, &CUP, 1);
+					semop(77981, &VUP, 1);
                 }
             }
             sleep(1);
