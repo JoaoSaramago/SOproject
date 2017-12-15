@@ -1,18 +1,23 @@
 #include "defines.h"
 
-int sizeCliente = 0;
+int sizeCliente;
 Tcliente* arrCliente;
 
-int sizeViatura = 0;
+int sizeViatura;
 Tviatura* arrViatura;
 
 int semaforos;
 
 void lerDadosParaMemoriaCliente(){
+    // "apaga" os clientes
+    for (int i=0; i<200; i++) {
+        arrCliente[i].id = -1;
+    }
+    sizeCliente = 0;
     
     FILE *file;
-    if ((file = fopen("utilizadores.dat", "r")) == NULL) { //usar "utilizadores.dat" se o ficheiro compilado estiver no mesmo sitio do .dat
-        if ((file = fopen("utilizadores.txt", "r")) == NULL) { //usar "utilizadores.txt" se o ficheiro compilado estiver no mesmo sitio do .txt
+    if ((file = fopen("utilizadores.dat", "r")) == NULL) {
+        if ((file = fopen("utilizadores.txt", "r")) == NULL) {
             printf("Nao foi possivel abrir o ficheiro com os clientes.\n");
             exit(1);
         }
@@ -44,12 +49,16 @@ void lerDadosParaMemoriaCliente(){
 }
 
 void lerDadosParaMemoriaViatura() {
+    //"apaga" as viaturas
+    for (int i=0; i<200; i++) {
+        arrViatura[i].mudancas = -1;
+    }
+    sizeViatura = 0;
     
     FILE *file;
-    if ((file = fopen("viaturas.dat", "r")) == NULL) { //usar "viaturas.dat" se o ficheiro compilado estiver no mesmo sitio do .dat
-        if ((file = fopen("viaturas.txt", "r")) == NULL) { //usar "viaturas.txt" se o ficheiro compilado estiver no mesmo sitio do .txt
+    if ((file = fopen("viaturas.dat", "r")) == NULL) {
+        if ((file = fopen("viaturas.txt", "r")) == NULL) {
             printf("Nao foi possivel abrir o ficheiro com as viaturas.\n");
-            //free(arrViatura);
             exit(1);
         }
         printf("A ler viaturas de viaturas.txt");
@@ -80,7 +89,7 @@ void lerDadosParaMemoriaViatura() {
     fclose(file);
 }
 
-void lerDadosParaMemoria() {    //TODO reset antes de ler
+void lerDadosParaMemoria() {
     lerDadosParaMemoriaCliente();
     printf("\n");
     lerDadosParaMemoriaViatura();
@@ -281,8 +290,8 @@ void alterarViatura() {
 
 int guardarDadosCliente() {
     if (arrCliente != NULL) {
-        FILE *filebin = fopen("utilizadores.dat", "wb"); //usar "utilizadores.dat" se o ficheiro compilado estiver no mesmo sitio do .dat
-        FILE *filetxt = fopen("utilizadores.txt", "wb"); //usar "utilizadores.txt" se o ficheiro compilado estiver no mesmo sitio do .txt
+        FILE *filebin = fopen("utilizadores.dat", "wb");
+        FILE *filetxt = fopen("utilizadores.txt", "wb");
         printf("A guardar %d clientes.\n", sizeCliente);
         for (int i = 0; i < sizeCliente; ++i) {
             Tcliente cliente = arrCliente[i];
@@ -300,8 +309,8 @@ int guardarDadosCliente() {
 
 int guardarDadosViatura() {
     if (arrViatura != NULL) {
-        FILE *filebin = fopen("viaturas.dat", "wb"); //usar "viaturas.dat" se o ficheiro compilado estiver no mesmo sitio do .dat
-        FILE *filetxt = fopen("viaturas.txt", "wb"); //usar "viaturas.txt" se o ficheiro compilado estiver no mesmo sitio do .txt
+        FILE *filebin = fopen("viaturas.dat", "wb");
+        FILE *filetxt = fopen("viaturas.txt", "wb");
         printf("A guardar %d viaturas.\n", sizeViatura);
         for (int i = 0; i < sizeViatura; ++i) {
             Tviatura viatura = arrViatura[i];
@@ -325,7 +334,6 @@ void viaturasDisponiveis() {
     for (int i=0; i<sizeViatura; i++) {
         if (arrViatura[i].status == AVAILABLE) {
             printf("%s\n", arrViatura[i].marca);
-            //TODO calcular tempo alugado
         }
     }
 }
@@ -333,7 +341,7 @@ void viaturasDisponiveis() {
 void viaturasNaoDisponiveis() {
     for (int i=0; i<sizeViatura; i++) {
         if (!(arrViatura[i].status == AVAILABLE)) {
-            printf("%s\n", arrViatura[i].marca);
+            printf("ID viatura: %s, ocupada à %ld\n", arrViatura[i].ID, (getTimeSecs()-arrViatura[i].timeStarted));
         }
     }
 }
@@ -343,30 +351,26 @@ int main() {
     
     int idV = shmget( 77981, sizeof(Tviatura)*200, IPC_CREAT | 0666 );
     arrViatura = (Tviatura *)shmat(idV, 0, 0);
-    for (int i=0; i<200; i++) {
-        arrViatura[i].mudancas = -1;
-    } //TODO nao apagar sempre tudo se ja existir
     
     int idC = shmget( 77561, sizeof(Tcliente)*200, IPC_CREAT | 0666 );
     arrCliente = (Tcliente *)shmat(idC, 0, 0);
-    for (int i=0; i<200; i++) {
-        arrCliente[i].id = -1;
-    } //TODO nao apagar sempre tudo se ja existir
     
-    printf("time: %ld seconds\n", getTimeSecs());
-    
-    printf(BOLDCYAN"\nPrograma administrador\n\n");
-    printf("1"RESET" - Ler dados para memória\n");
-    printf(BOLDCYAN"2"RESET" - Imprimir memória\n");
-    printf(BOLDCYAN"3"RESET" - Alterar utilizador\n");
-    printf(BOLDCYAN"4"RESET" - Alterar viatura\n");
-    printf(BOLDCYAN"5"RESET" - Guardar dados\n");
-    printf(BOLDCYAN"6"RESET" - Viaturas disponiveis\n");
-    printf(BOLDCYAN"7"RESET" - Viaturas ocupadas\n");
-    printf(BOLDCYAN"sair"RESET" - Sair\n");
+    printf(BOLDCYAN"\nPrograma administrador\n");
 
     char s[10], *end;
     while (1) {
+        printf(BOLDCYAN"\nMenu:");
+        printf(BOLDCYAN"\n--------------------------");
+        printf("\n1"RESET" - Ler dados para memória\n");
+        printf(BOLDCYAN"2"RESET" - Imprimir memória\n");
+        printf(BOLDCYAN"3"RESET" - Alterar utilizador\n");
+        printf(BOLDCYAN"4"RESET" - Alterar viatura\n");
+        printf(BOLDCYAN"5"RESET" - Guardar dados\n");
+        printf(BOLDCYAN"6"RESET" - Viaturas disponiveis\n");
+        printf(BOLDCYAN"7"RESET" - Viaturas ocupadas\n");
+        printf(BOLDCYAN"sair"RESET" - Sair\n");
+        printf(BOLDCYAN"--------------------------\n"RESET);
+        
         printf(BOLDBLACK"\nEscolha um menu: "RESET);
         fgets( s, 10, stdin);
         s[ strlen(s)-1 ] = 0;
