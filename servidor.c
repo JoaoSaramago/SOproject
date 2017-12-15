@@ -60,7 +60,7 @@ void login(char* nickname, char* password, int clientPid){
 }
 
 void vehicleToString(char* string, int i){
-    strcat(string, arrViatura[i].ID);
+    strcpy(string, arrViatura[i].ID);
     strcat(string, ";");
     strcat(string, arrViatura[i].cor);
     strcat(string, ";");
@@ -70,23 +70,30 @@ void vehicleToString(char* string, int i){
     strcat(string, ";");
     strcat(string, arrViatura[i].tipo);
     strcat(string, ";");
-    char temp = arrViatura[i].mudancas;
-    strcat(string, &temp);
+    char buffer[33];
+    sprintf(buffer, "%d", arrViatura[i].mudancas);
+    strcat(string, buffer);
     strcat(string, ";");
     strcat(string, arrViatura[i].matricula);
 }
 
 void listVehicles(int clientID){
+    printf("oi\n");
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
-    for (int i=0; i<200; i++) { // TODO verificar tamanho
+    int i = 0;
+    while (arrViatura[i].mudancas != -1) {
+        printf("vehicle\n");
         if (arrViatura[i].status == AVAILABLE) {
             vehicleToString(tempMessage.data.text, i);
-            msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
+            printf("%s", tempMessage.data.text);
+            tempMessage.data.status = SENDING;
+            msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
         }
+        i++;
     }
     tempMessage.data.status = ENDLIST;
-    msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);    //Fim da lista
+    msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);    //Fim da lista
 }
 
 void reservar(int clientID, char* vehicleID){
@@ -189,7 +196,7 @@ void carregarSaldo(int clientID, char* moneyToAddChar){
             break;
         }
     }
-    msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
+    msgsnd(77561, &tempMessage, sizeof(tempMessage.data), 0);
 }
 
 void logout(int clientID){
@@ -197,14 +204,14 @@ void logout(int clientID){
     tempMessage.data.status = FAIL;
     for(int i = 0; i<200; i++){
         if(arrCliente[i].id == clientID) {
-            sempop(77981, &CDOWN, 1);
+            semop(77981, &CDOWN, 1);
             arrCliente[i].online = -1;
-			sempop(77981, &CUP, 1); 
+			semop(77981, &CUP, 1);
             tempMessage.data.status = SUCCESS;
             break;
         }
     }
-    msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
+    msgsnd(77561, &tempMessage, sizeof(tempMessage.data), 0);
 }
 
 
@@ -253,16 +260,16 @@ int main(){ //TODO registar nos logs
         //SEMDOWN
         while(1){
             for(int i = 0; i<200; i++){ //TODO verificar tamanho
-				semop(77981, &VDOWN, 1);
+				//semop(77981, &VDOWN, 1);
                 if(arrViatura[i].status == RESERVED && ((arrViatura[i].timeStarted - getTimeSecs())/60 >= 5)){
 					arrViatura[i].status = AVAILABLE;
                     arrViatura[i].timeStarted = -1;
-					semop(77981, &CDOWN, 1);
+					//semop(77981, &CDOWN, 1);
                     if(arrCliente[arrViatura[i].clientIndex].online) {		//Check to see if the client is online before sending a signal. The client shouldn't ever be offline when he has a reservation, but it's nice to check anyway
                         kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR1);
 					}
-					semop(77981, &CUP, 1);
-					semop(77981, &VUP, 1);
+					//semop(77981, &CUP, 1);
+					//semop(77981, &VUP, 1);
                 }
             }
             sleep(1);
@@ -277,13 +284,13 @@ int main(){ //TODO registar nos logs
         
         while (1) {
             int status = msgrcv(idM, &tempMessage, sizeof(tempMessage.data), 1, 0);
-            
             switch (tempMessage.data.msgType) {
                 case LOGIN:
                     login(tempMessage.data.info1, tempMessage.data.info2, tempMessage.data.myid);
                     break;
                     
                 case VIATURAS:
+                    printf("listvehicles\n");
                     listVehicles(tempMessage.data.myid);
                     break;
                     

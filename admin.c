@@ -126,9 +126,9 @@ void alterarUtilizador() {
                     printf(BOLDBLACK"Digite a nova password: "RESET);
                     fgets(pass, 20, stdin);
                     pass[strlen(pass) - 1] = 0;
-                    semop(77981, &DOWN, 1);
+                    semop(77981, &CDOWN, 1);
                     strcpy(arrCliente[i].pass, pass);
-                    semop(77981, &UP, 1);
+                    semop(77981, &CUP, 1);
                     break;
                 }
             }
@@ -143,9 +143,9 @@ void alterarUtilizador() {
                     printf(BOLDBLACK"Digite o novo saldo: "RESET);
                     fgets(saldo, 20, stdin);
                     saldo[ strlen(saldo)-1 ] = 0;
-                    semop(77981, &DOWN, 1);
+                    semop(77981, &VDOWN, 1);
                     arrCliente[i].saldo = (int) strtol(saldo, &end, 10);
-                    semop(77981, &UP, 1);
+                    semop(77981, &VUP, 1);
                     break;
                 }
             }
@@ -343,7 +343,7 @@ int main() {
     int idV = shmget( 77981, sizeof(Tviatura)*200, IPC_CREAT | 0666 );
     arrViatura = (Tviatura *)shmat(idV, 0, 0);
     for (int i=0; i<200; i++) {
-        strcpy( arrViatura[i].ID, "");
+        arrViatura[i].mudancas = -1;
     } //TODO nao apagar sempre tudo se ja existir
     
     int idC = shmget( 77561, sizeof(Tcliente)*200, IPC_CREAT | 0666 );
