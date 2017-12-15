@@ -39,6 +39,7 @@ void alarmHandlerChild(){
 }
 
 void login(char* nickname, char* password, int clientPid){
+	printToScreen("Client with pid %d trying to log in...\n", clientPid);
     MsgServerClient tempMessage;
     tempMessage.type = clientPid;
     tempMessage.data.status = FAIL;
@@ -78,6 +79,7 @@ void vehicleToString(char* string, int i){
 }
 
 void listVehicles(int clientID){
+	printToScreen("Sending vehicle list to client %d.\n", clientID);
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
     int i = 0;
@@ -96,6 +98,7 @@ void listVehicles(int clientID){
 }
 
 void reservar(int clientID, char* vehicleID){
+	printToScreen("Reservar - Cliente %d a reservar um veiculo.", clientID);
     for (int i = 0; i<200; i++) { //TODO verificar tamanho
         if(arrCliente[i].id == clientID) {
             MsgServerClient tempMessage;
@@ -121,10 +124,11 @@ void reservar(int clientID, char* vehicleID){
 			return;
         }
     }
-    printToScreen("Client not found");
+    printToScreen("Reservar - Client %d not found", clientID);
 }
 
 void alugar(int clientID, char* vehicleID){
+	printToScreen("Client %d a tentar alugar um veiculo.", clientID);
     for (int i = 0; i<200; i++) { //TODO verificar tamanho
         if(arrCliente[i].id == clientID) {
             MsgServerClient tempMessage;
@@ -145,13 +149,14 @@ void alugar(int clientID, char* vehicleID){
                 tempMessage.data.status = FAIL;
                 msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
             }
-            break;
+            return;
         }
     }
-    printf("Client not found");
+    printToScreen("Alugar - Client %d not found", clientID);
 }
 
-void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reservas???
+void finalizar(int clientID){
+	printToScreen("Cliente %d a tentar finalizar um aluguer", clientID);
     for(int i = 0; i<200; i++){
         if(arrCliente[i].id == clientID) {
             MsgServerClient tempMessage;
@@ -173,13 +178,15 @@ void finalizar(int clientID){   //Perguntar ao prof: Podem haver multiplas reser
             break;
         }
     }
+	printToScreen("Finalizar - Client %d not found", clientID);
 }
 
-void saldo(int clientID){   //Saldo actual ou antes de um aluguer?
+void saldo(int clientID){
+	printToScreen("Saldo - Cliente %d a pedir o seu saldo.", clientID);
+	MsgServerClient tempMessage;
+	tempMessage.type = clientID;
+    tempMessage.data.status = FAIL;
     for(int i = 0; i<200; i++){	//TODO calcular tamanho array
-		MsgServerClient tempMessage;
-        tempMessage.type = clientID;
-        tempMessage.data.status = FAIL;
 		semop(77981, &CDOWN, 1);
 		if(arrCliente[i].id == clientID) {
 			for(int j = 0; j<200; j++){	//TODO calcular size array - Percorre viaturas
@@ -202,10 +209,11 @@ void saldo(int clientID){   //Saldo actual ou antes de um aluguer?
 		}
 		
 	}
-	printToScreen("User not found!");
+	printToScreen("Saldo - User not found!");
 }
 
 void carregarSaldo(int clientID, char* moneyToAddChar){
+	printToScreen("Carregar - Cliente %d a tentar carregar saldo.", clientID);
     int moneyToAdd = atoi(moneyToAddChar);
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
@@ -265,13 +273,12 @@ int main(){ //TODO registar nos logs
 	FILE *logFile = fopen("servidor.log", "a");
 
 	if(pidFile == NULL){
-		printf("Error opening file!\n");
-		fprintf(logFile, "Error opening file!\n");
+		printToScreen("PID File - Error opening file!\n");
 		exit(1);
 	}
 	
 	fprintf(pidFile,"PID: %d\n", getpid() );
-	fprintf(logFile, "PID: %d\n", getpid() );
+	printToScreen("PID: %d\n", getpid() );
 	
 	fclose(pidFile);
     fclose(logFile);
