@@ -291,17 +291,27 @@ int main(){ //TODO registar nos logs
 		alarm(60);
         while(1){
             for(int i = 0; i<200; i++){ //TODO verificar tamanho
-				//semop(77981, &VDOWN, 1);
+				semop(77981, &VDOWN, 1);
                 if(arrViatura[i].status == RESERVED && ((arrViatura[i].timeStarted - getTimeSecs())/60 >= 5)){
 					arrViatura[i].status = AVAILABLE;
                     arrViatura[i].timeStarted = -1;
-					//semop(77981, &CDOWN, 1);
+					semop(77981, &CDOWN, 1);
                     if(arrCliente[arrViatura[i].clientIndex].online) {		//Check to see if the client is online before sending a signal. The client shouldn't ever be offline when he has a reservation, but it's nice to check anyway
                         kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR1);
 					}
-					//semop(77981, &CUP, 1);
-					//semop(77981, &VUP, 1);
+					semop(77981, &CUP, 1);
+					semop(77981, &VUP, 1);
                 }
+				
+				semop(77981, &VDOWN, 1);
+				semop(77981, &CDOWN, 1);
+				if(arrCliente[arrViatura[i].clientIndex].saldo - 1 < 0){
+					kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR2);
+				} else {
+					arrCliente[arrViatura[i].clientIndex].saldo--;
+				}
+				semop(77981, &CUP, 1);
+				semop(77981, &VUP, 1);
             }
             sleep(1);
         }
