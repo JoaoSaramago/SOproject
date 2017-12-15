@@ -21,8 +21,8 @@
 struct sembuf CDOWN = { 0, -1, 0};
 struct sembuf CUP = { 0, 1, 0};
 
-struct sembuf VDOWN = { 0, -1, 0};  //MUDAR!!
-struct sembuf VUP = { 0, 1, 0};
+struct sembuf VDOWN = { 1, -1, 0};
+struct sembuf VUP = { 1, 1, 0};
 
 typedef enum {
     LOGIN,
