@@ -44,9 +44,9 @@ void login(char* nickname, char* password, int clientPid){
     tempMessage.data.status = FAIL;
     for(int i = 0; i < 200; i++) { // TODO verificar tamanho
         if (strcmp(arrCliente[i].nick, nickname) == 0) {
-            printf("User found.\n");
+            printToScreen("User found.\n");
             if(strcmp(arrCliente[i].pass, password) == 0){
-                printf("User connected.\n");
+                printToScreen("User connected.\n");
 				semop(77981, &CDOWN, 1);
                 arrCliente[i].pid = clientPid;
                 tempMessage.data.value1 = arrCliente[i].id;
@@ -112,10 +112,10 @@ void reservar(int clientID, char* vehicleID){
                 tempMessage.data.status = FAIL;
                 msgsnd(77561, &tempMessage, sizeof(tempMessage.data), clientID);
             }
-            break;
+			return;
         }
     }
-    printf("Client not found");
+    printToScreen("Client not found");
 }
 
 void alugar(int clientID, char* vehicleID){
