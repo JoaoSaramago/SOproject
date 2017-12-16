@@ -55,7 +55,7 @@ void reserve() {
     MsgServerClient receivedMsg;
     msgrcv(idM, &receivedMsg, sizeof(receivedMsg.data), thisid, 0);
     if (receivedMsg.data.status == SUCCESS)
-        printf("Vehicle reserved successefully.\n");
+        printf("Vehicle reserved successfully.\n");
     else
         printf("It was not possible to reserve the vehicle.\n");
 }
@@ -75,7 +75,7 @@ void rent() {
     MsgServerClient receivedMsg;
     msgrcv(idM, &receivedMsg, sizeof(receivedMsg.data), thisid, 0);
     if (receivedMsg.data.status == SUCCESS)
-        printf("Vehicle rented successefully.\n");
+        printf("Vehicle rented successfully.\n");
     else
         printf("It was not possible to rent the vehicle.\n");
 }
@@ -181,9 +181,6 @@ int main(){
     
     thisid = tempMessage.data.value1;
     printf("\nClientID: %d\n", thisid);
-    
-    
-    printf(BOLDCYAN"\nPrograma administrador");
     
     char s[10], *end;
     while (1) {

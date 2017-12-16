@@ -1,19 +1,18 @@
 #include "defines.h"
 
-int sizeCliente;
+int sizeCliente = 0;
 Tcliente* arrCliente;
 
-int sizeViatura;
+int sizeViatura = 0;
 Tviatura* arrViatura;
 
 int semaforos;
 
 void lerDadosParaMemoriaCliente(){
-    // "apaga" os clientes
-    for (int i=0; i<200; i++) {
-        arrCliente[i].id = -1;
-    }
-    sizeCliente = 0;
+    int sizeArrNew = 0;
+    int sizeArrFinal = 0;
+    Tcliente tempArrNew[200];
+    Tcliente tempArrFinal[200];
     
     FILE *file;
     if ((file = fopen("utilizadores.dat", "r")) == NULL) {
@@ -34,26 +33,45 @@ void lerDadosParaMemoriaCliente(){
             strcpy(cliente.turma, strtok (NULL,";"));
             cliente.saldo = (int) strtol(strtok(NULL, ";"), &end, 10);
             cliente.hasVehicle = 0;
-            arrCliente[sizeCliente] = cliente;
-            sizeCliente++;
-            printf(".");
+            tempArrNew[sizeArrNew] = cliente;
+            sizeArrNew++;
         }
     } else {
         printf("A ler clientes de clientes.dat");
-        while (fread(&arrCliente[sizeCliente], sizeof(Tcliente), 1, file) > 0) {
-            sizeCliente++;
-            printf(".");
+        while (fread(&tempArrNew[sizeArrNew], sizeof(Tcliente), 1, file) > 0) {
+            sizeArrNew++;
         }
     }
     fclose(file);
+    for (int i = 0; i<sizeArrNew; i++) {
+        int stop = 0;
+        for (int j = 0; j<sizeCliente; j++) {
+            if (tempArrNew[i].id == arrCliente[j].id) {
+                tempArrFinal[sizeArrFinal] = arrCliente[j];
+                stop = 1;
+                break;
+            }
+        }
+        if (stop == 0) {
+            tempArrFinal[sizeArrFinal] = tempArrNew[i];
+            printf(".");
+        }
+        sizeArrFinal++;
+    }
+    for (int k = 0; k<200; k++) {
+        if (k<sizeArrFinal) {
+            arrCliente[k] = tempArrFinal[k];
+        } else
+            arrCliente[k].id = -1;
+    }
+    sizeCliente = sizeArrFinal;
 }
 
 void lerDadosParaMemoriaViatura() {
-    //"apaga" as viaturas
-    for (int i=0; i<200; i++) {
-        arrViatura[i].mudancas = -1;
-    }
-    sizeViatura = 0;
+    int sizeArrNew = 0;
+    int sizeArrFinal = 0;
+    Tviatura tempArrNew[200];
+    Tviatura tempArrFinal[200];
     
     FILE *file;
     if ((file = fopen("viaturas.dat", "r")) == NULL) {
@@ -75,18 +93,38 @@ void lerDadosParaMemoriaViatura() {
             strcpy(viatura.matricula, strtok (NULL,";"));
             viatura.status = AVAILABLE;
             viatura.timeStarted = -1;
-            arrViatura[sizeViatura] = viatura;
-            sizeViatura++;
-            printf(".");
+            tempArrNew[sizeArrNew] = viatura;
+            sizeArrNew++;
         }
     } else {
         printf("A ler viaturas de viaturas.dat");
-        while (fread(&arrViatura[sizeViatura], sizeof(Tviatura), 1, file) > 0) {
-            sizeViatura++;
-            printf(".");
+        while (fread(&tempArrNew[sizeArrNew], sizeof(Tviatura), 1, file) > 0) {
+            sizeArrNew++;
         }
     }
     fclose(file);
+    for (int i = 0; i<sizeArrNew; i++) {
+        int stop = 0;
+        for (int j = 0; j<sizeViatura; j++) {
+            if (strcmp(tempArrNew[i].ID, arrViatura[j].ID) == 0) {
+                tempArrFinal[sizeArrFinal] = arrViatura[j];
+                stop = 1;
+                break;
+            }
+        }
+        if (stop == 0) {
+            tempArrFinal[sizeArrFinal] = tempArrNew[i];
+            printf(".");
+        }
+        sizeArrFinal++;
+    }
+    for (int k = 0; k<200; k++) {
+        if (k<sizeArrFinal) {
+            arrViatura[k] = tempArrFinal[k];
+        } else
+            arrViatura[k].mudancas = -1;
+    }
+    sizeViatura = sizeArrFinal;
 }
 
 void lerDadosParaMemoria() {
@@ -341,7 +379,7 @@ void viaturasDisponiveis() {
 void viaturasNaoDisponiveis() {
     for (int i=0; i<sizeViatura; i++) {
         if (!(arrViatura[i].status == AVAILABLE)) {
-            printf("ID viatura: %s, ocupada à %ld\n", arrViatura[i].ID, (getTimeSecs()-arrViatura[i].timeStarted));
+            printf("ID viatura: %s, ocupada à %ld", arrViatura[i].ID, (getTimeSecs()-arrViatura[i].timeStarted));
         }
     }
 }
@@ -349,11 +387,43 @@ void viaturasNaoDisponiveis() {
 int main() {
     semaforos = semget(77981, 5, 0);
     
-    int idV = shmget( 77981, sizeof(Tviatura)*200, IPC_CREAT | 0666 );
-    arrViatura = (Tviatura *)shmat(idV, 0, 0);
+    int idV = shmget( 77981, sizeof(Tviatura)*200, 0);
+    if (idV < 0) {
+        printf("nao criada");
+        idV = shmget( 77981, sizeof(Tviatura)*200, IPC_CREAT | 0666 );
+        arrViatura = (Tviatura *)shmat(idV, 0, 0);
+        // "reset" as viaturas
+        for (int i=0; i<200; i++) {
+            arrViatura[i].mudancas = -1;
+        }
+    } else {
+        arrViatura = (Tviatura *)shmat(idV, 0, 0);
+        int i = 0;
+        while (arrViatura[i].mudancas != -1) {
+            i++;
+        }
+        sizeViatura = i;
+    }
     
-    int idC = shmget( 77561, sizeof(Tcliente)*200, IPC_CREAT | 0666 );
-    arrCliente = (Tcliente *)shmat(idC, 0, 0);
+    int idC = shmget( 77561, sizeof(Tcliente)*200, 0);
+    if (idC < 0) {
+        printf("nao criada");
+        idC = shmget( 77561, sizeof(Tcliente)*200, IPC_CREAT | 0666 );
+        arrCliente = (Tcliente *)shmat(idC, 0, 0);
+        // "reset" aos clientes
+        for (int i=0; i<200; i++) {
+            arrCliente[i].id = -1;
+        }
+    } else {
+        arrCliente = (Tcliente *)shmat(idC, 0, 0);
+        int i = 0;
+        while (arrCliente[i].id != -1) {
+            i++;
+        }
+        sizeCliente = i;
+    }
+        
+    
     
     printf(BOLDCYAN"\nPrograma administrador\n");
 

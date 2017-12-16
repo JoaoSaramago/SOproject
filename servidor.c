@@ -183,13 +183,13 @@ void finalizar(int clientID){
                     arrViatura[j].status = AVAILABLE;
 					semop(77981, &VUP, 1);
                     tempMessage.data.status = SUCCESS;
-                    arrCliente[i].hasVehicle = 0;
                     break;
                 } else {
                     semop(77981, &VUP, 1);
                 }
                 j++;
             }
+            arrCliente[i].hasVehicle = 0;
             msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
             return;
         }
@@ -297,11 +297,12 @@ int main(){
             int i = 0;
             while (arrViatura[i].mudancas != -1) { //percorrer viaturas
 				semop(77981, &VDOWN, 1);
-                if(arrViatura[i].status == RESERVED && ((arrViatura[i].timeStarted - getTimeSecs())/60 >= 5)){
+                if(arrViatura[i].status == RESERVED && ((getTimeSecs() - arrViatura[i].timeStarted)/60 >= 5)){
 					arrViatura[i].status = AVAILABLE;
                     arrViatura[i].timeStarted = -1;
 					semop(77981, &CDOWN, 1);
                     if(arrCliente[arrViatura[i].clientIndex].online) {		//Check to see if the client is online before sending a signal. The client shouldn't ever be offline when he has a reservation, but it's nice to check anyway
+                        arrCliente[arrViatura[i].clientIndex].hasVehicle = 0;
                         kill(arrCliente[arrViatura[i].clientIndex].pid, SIGUSR1);
 						printToScreen("Cliente %d ultrapassou os 5 minutos!", arrCliente[arrViatura[i].clientIndex].id);
 					}
