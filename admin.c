@@ -8,6 +8,7 @@ Tviatura* arrViatura;
 
 int semaforos;
 
+//coloca os clientes em memoria a partir da leitura de um ficheiro, se os clientes lidos já existirem na memoria estes não são modificados, apenas apaga da memoria os que já nao existem no ficheiro ou acrescenta os que forem novos
 void lerDadosParaMemoriaCliente(){
     int sizeArrNew = 0;
     int sizeArrFinal = 0;
@@ -33,12 +34,12 @@ void lerDadosParaMemoriaCliente(){
             strcpy(cliente.turma, strtok (NULL,";"));
             cliente.saldo = (int) strtol(strtok(NULL, ";"), &end, 10);
             cliente.hasVehicle = 0;
-            tempArrNew[sizeArrNew] = cliente;
+            tempArrNew[sizeArrNew] = cliente; // mete todos os clientes lidos do .txt num array temporario
             sizeArrNew++;
         }
     } else {
         printf("A ler clientes de clientes.dat");
-        while (fread(&tempArrNew[sizeArrNew], sizeof(Tcliente), 1, file) > 0) {
+        while (fread(&tempArrNew[sizeArrNew], sizeof(Tcliente), 1, file) > 0) { // mete todos os clientes lidos do .dat num array temporario
             sizeArrNew++;
         }
     }
@@ -46,13 +47,13 @@ void lerDadosParaMemoriaCliente(){
     for (int i = 0; i<sizeArrNew; i++) {
         int stop = 0;
         for (int j = 0; j<sizeCliente; j++) {
-            if (tempArrNew[i].id == arrCliente[j].id) {
+            if (tempArrNew[i].id == arrCliente[j].id) { // se no novo array temporario houver um cliente igual a um já existente entao copia se o antigo para um outro array temporario final
                 tempArrFinal[sizeArrFinal] = arrCliente[j];
                 stop = 1;
                 break;
             }
         }
-        if (stop == 0) {
+        if (stop == 0) { // se o cliente no novo array ainda nao existe no array antigo, entao copia se este para o array temporario final
             tempArrFinal[sizeArrFinal] = tempArrNew[i];
             printf(".");
         }
@@ -60,13 +61,14 @@ void lerDadosParaMemoriaCliente(){
     }
     for (int k = 0; k<200; k++) {
         if (k<sizeArrFinal) {
-            arrCliente[k] = tempArrFinal[k];
+            arrCliente[k] = tempArrFinal[k]; //copia se o array temporario final para a nossa memoria partilhada
         } else
-            arrCliente[k].id = -1;
+            arrCliente[k].id = -1; //mete se os restantes espaços como "apagados"
     }
     sizeCliente = sizeArrFinal;
 }
 
+//coloca as viaturas em memoria a partir da leitura de um ficheiro, se as viaturas lidos já existirem na memoria estes não são modificados, apenas apaga da memoria as que já nao existem no ficheiro ou acrescenta as que forem novas
 void lerDadosParaMemoriaViatura() {
     int sizeArrNew = 0;
     int sizeArrFinal = 0;
@@ -93,12 +95,12 @@ void lerDadosParaMemoriaViatura() {
             strcpy(viatura.matricula, strtok (NULL,";"));
             viatura.status = AVAILABLE;
             viatura.timeStarted = -1;
-            tempArrNew[sizeArrNew] = viatura;
+            tempArrNew[sizeArrNew] = viatura; // mete todas as viaturas lidas do .txt num array temporario
             sizeArrNew++;
         }
     } else {
         printf("A ler viaturas de viaturas.dat");
-        while (fread(&tempArrNew[sizeArrNew], sizeof(Tviatura), 1, file) > 0) {
+        while (fread(&tempArrNew[sizeArrNew], sizeof(Tviatura), 1, file) > 0) { // mete todas as viaturas lidas do .dat num array temporario
             sizeArrNew++;
         }
     }
@@ -106,13 +108,13 @@ void lerDadosParaMemoriaViatura() {
     for (int i = 0; i<sizeArrNew; i++) {
         int stop = 0;
         for (int j = 0; j<sizeViatura; j++) {
-            if (strcmp(tempArrNew[i].ID, arrViatura[j].ID) == 0) {
+            if (strcmp(tempArrNew[i].ID, arrViatura[j].ID) == 0) { // se no novo array temporario houver uma viatura igual a uma já existente entao copia se a antiga para um outro array temporario final
                 tempArrFinal[sizeArrFinal] = arrViatura[j];
                 stop = 1;
                 break;
             }
         }
-        if (stop == 0) {
+        if (stop == 0) { // se a viatura no novo array ainda nao existe no array antigo, entao copia se esta para o array temporario final
             tempArrFinal[sizeArrFinal] = tempArrNew[i];
             printf(".");
         }
@@ -120,9 +122,9 @@ void lerDadosParaMemoriaViatura() {
     }
     for (int k = 0; k<200; k++) {
         if (k<sizeArrFinal) {
-            arrViatura[k] = tempArrFinal[k];
+            arrViatura[k] = tempArrFinal[k]; //copia se o array temporario final para a nossa memoria partilhada
         } else
-            arrViatura[k].mudancas = -1;
+            arrViatura[k].mudancas = -1; //mete se os restantes espaços como "apagados"
     }
     sizeViatura = sizeArrFinal;
 }
@@ -330,12 +332,13 @@ int guardarDadosCliente() {
     if (arrCliente != NULL) {
         FILE *filebin = fopen("utilizadores.dat", "wb");
         FILE *filetxt = fopen("utilizadores.txt", "wb");
-        printf("A guardar %d clientes.\n", sizeCliente);
+        printf("A guardar %d clientes", sizeCliente);
         for (int i = 0; i < sizeCliente; ++i) {
             Tcliente cliente = arrCliente[i];
             fprintf(filetxt, "%s;%s;%d;%s;%s;%s;%d\n", cliente.nick, cliente.pass, cliente.id, cliente.nome,
                     cliente.email, cliente.turma, cliente.saldo);
             fwrite(&cliente, sizeof(Tcliente), 1, filebin);
+            printf(".");
         }
         fclose(filebin);
         fclose(filetxt);
@@ -349,11 +352,12 @@ int guardarDadosViatura() {
     if (arrViatura != NULL) {
         FILE *filebin = fopen("viaturas.dat", "wb");
         FILE *filetxt = fopen("viaturas.txt", "wb");
-        printf("A guardar %d viaturas.\n", sizeViatura);
+        printf("\nA guardar %d viaturas", sizeViatura);
         for (int i = 0; i < sizeViatura; ++i) {
             Tviatura viatura = arrViatura[i];
             fprintf(filetxt, "%s;%s;%s;%s;%s;%d;%s", viatura.ID, viatura.cor, viatura.marca, viatura.modelo, viatura.tipo, viatura.mudancas, viatura.matricula);
             fwrite( &viatura, sizeof(Tviatura), 1, filebin);
+            printf(".");
         }
         fclose(filebin);
         fclose(filetxt);
@@ -365,38 +369,45 @@ int guardarDadosViatura() {
 
 void guardarDados() {
     if ( guardarDadosCliente() && guardarDadosViatura() )
-        printf("Dados guardados com sucesso.\n");
+        printf("\nDados guardados com sucesso.\n");
 }
 
 void viaturasDisponiveis() {
+    printf("Viaturas disponiveis:\n");
     for (int i=0; i<sizeViatura; i++) {
         if (arrViatura[i].status == AVAILABLE) {
-            printf("%s\n", arrViatura[i].marca);
+            printf("%s\n", arrViatura[i].ID);
         }
     }
 }
 
 void viaturasNaoDisponiveis() {
+    printf("Viaturas ocupadas:\n");
     for (int i=0; i<sizeViatura; i++) {
         if (!(arrViatura[i].status == AVAILABLE)) {
-            printf("ID viatura: %s, ocupada à %ld", arrViatura[i].ID, (getTimeSecs()-arrViatura[i].timeStarted));
+            long min = (getTimeSecs()-arrViatura[i].timeStarted)/60;
+            long s = (getTimeSecs()-arrViatura[i].timeStarted) - (min*60);
+            printf("ID viatura: %s, ocupada à %ld min e %ld s.\n", arrViatura[i].ID, min, s);
         }
     }
 }
 
 int main() {
+    
+    printf(BOLDCYAN"\nPrograma administrador\n"RESET);
+    
     semaforos = semget(77981, 5, 0);
     
     int idV = shmget( 77981, sizeof(Tviatura)*200, 0);
-    if (idV < 0) {
-        printf("nao criada");
+    if (idV < 0) { // se a memoria partilhada ainda nao existe
+        printf("A criar memoria partilhada para as viaturas...\n");
         idV = shmget( 77981, sizeof(Tviatura)*200, IPC_CREAT | 0666 );
         arrViatura = (Tviatura *)shmat(idV, 0, 0);
         // "reset" as viaturas
         for (int i=0; i<200; i++) {
             arrViatura[i].mudancas = -1;
         }
-    } else {
+    } else { // se a memoria partilhada já existe, saber o tamanho dela
         arrViatura = (Tviatura *)shmat(idV, 0, 0);
         int i = 0;
         while (arrViatura[i].mudancas != -1) {
@@ -406,15 +417,15 @@ int main() {
     }
     
     int idC = shmget( 77561, sizeof(Tcliente)*200, 0);
-    if (idC < 0) {
-        printf("nao criada");
+    if (idC < 0) { // se a memoria partilhada ainda nao existe
+        printf("A criar memoria partilhada para os clientes...\n");
         idC = shmget( 77561, sizeof(Tcliente)*200, IPC_CREAT | 0666 );
         arrCliente = (Tcliente *)shmat(idC, 0, 0);
         // "reset" aos clientes
         for (int i=0; i<200; i++) {
             arrCliente[i].id = -1;
         }
-    } else {
+    } else { // se a memoria partilhada já existe, saber o tamanho dela
         arrCliente = (Tcliente *)shmat(idC, 0, 0);
         int i = 0;
         while (arrCliente[i].id != -1) {
@@ -422,15 +433,12 @@ int main() {
         }
         sizeCliente = i;
     }
-        
-    
-    
-    printf(BOLDCYAN"\nPrograma administrador\n");
 
     char s[10], *end;
     while (1) {
+        // as opcoes do menu aparecem sempre que se escolhe um novo menu para nao ter de voltar ao topo a procura de quais sao os menus existentes
         printf(BOLDCYAN"\nMenu:");
-        printf(BOLDCYAN"\n--------------------------");
+        printf("\n--------------------------");
         printf("\n1"RESET" - Ler dados para memória\n");
         printf(BOLDCYAN"2"RESET" - Imprimir memória\n");
         printf(BOLDCYAN"3"RESET" - Alterar utilizador\n");

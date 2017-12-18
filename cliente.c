@@ -100,7 +100,6 @@ void addMoney() {
     printf(BOLDBLACK"\nMoney to add: "RESET);
     fgets( money, 20, stdin);
     money[ strlen(money)-1 ] = 0;
-    // TODO verificar se é int
     MsgClientServer sendMsg;
     sendMsg.type = 1;
     sendMsg.data.msgType = CARREGAR;

@@ -18,7 +18,7 @@ void printToScreen(char* string, int clientID){
     sprintf(buffer, string, clientID);
 	printf("%d-%d-%d  %d:%d:%d - %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, buffer);
 	FILE *file = fopen("servidor.log", "ab");
-	fprintf(file, "%d-%d-%d  %d:%d:%d - %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, string);
+	fprintf(file, "%d-%d-%d  %d:%d:%d - %s\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, buffer);
 	fclose(file);
 }
 
@@ -227,18 +227,20 @@ void carregarSaldo(int clientID, char* moneyToAddChar){
     MsgServerClient tempMessage;
     tempMessage.type = clientID;
     tempMessage.data.status = FAIL;
-    int i = 0;
-    while (arrCliente[i].id != -1) { //percorrer clientes
-        if(arrCliente[i].id == clientID) {
-            semop(77981, &CDOWN, 1);
-            tempMessage.data.value1 = arrCliente[i].saldo;
-            arrCliente[i].saldo += moneyToAdd;
-            tempMessage.data.value2 = arrCliente[i].saldo;
-            semop(77981, &CUP, 1);
-            tempMessage.data.status = SUCCESS;
-            break;
+    if (moneyToAdd > 0) {
+        int i = 0;
+        while (arrCliente[i].id != -1) { //percorrer clientes
+            if(arrCliente[i].id == clientID) {
+                semop(77981, &CDOWN, 1);
+                tempMessage.data.value1 = arrCliente[i].saldo;
+                arrCliente[i].saldo += moneyToAdd;
+                tempMessage.data.value2 = arrCliente[i].saldo;
+                semop(77981, &CUP, 1);
+                tempMessage.data.status = SUCCESS;
+                break;
+            }
+            i++;
         }
-        i++;
     }
     msgsnd(idM, &tempMessage, sizeof(tempMessage.data), 0);
 }
@@ -325,7 +327,7 @@ int main(){
 				semop(77981, &VUP, 1);
                 i++;
             }
-            sleep(60);
+            pause();
         }
 	}
 	
